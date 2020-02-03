@@ -8,3 +8,4 @@ Unity.PlayableGraphVisualizer.csproj
 Unity.PlayableGraphVisualizer.Editor.csproj
 Playable_Animator.sln
 Assembly-CSharp.csproj
+Packages/
