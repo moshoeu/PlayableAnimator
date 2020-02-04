@@ -436,6 +436,25 @@ public class PlayableStateController
             }
         }
 
+        public void RemoveStateGroup(string groupName)
+        {
+            for (int i = 0; i < m_States.Count; i++)
+            {
+                var state = m_States[i];
+                if (state == null)
+                {
+                    continue;
+                }
+
+                if (state.stateGroupName == groupName)
+                {
+                    state.DestroyPlayable();
+                    m_States[state.index] = null;
+                    m_Count--;
+                }
+            }
+        }
+
         public void AddState(string stateName, bool isBlendTree, string groupName = null)
         {
             if (FindState(stateName) != null)
