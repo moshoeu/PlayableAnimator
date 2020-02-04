@@ -9,3 +9,7 @@ Unity.PlayableGraphVisualizer.Editor.csproj
 Playable_Animator.sln
 Assembly-CSharp.csproj
 Packages/
+Assets/Plugins/
+PlayableAnimator.sln
+Assets/Plugins.meta
+Animancer.csproj
