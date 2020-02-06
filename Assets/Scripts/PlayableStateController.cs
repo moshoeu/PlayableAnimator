@@ -361,6 +361,24 @@ namespace PlayableAnimator
                 m_Graph.Connect(state.playable, 0, m_Mixer, state.index);
             }
 
+            /// <summary>
+            /// 组装插值速度
+            /// </summary>
+            /// <param name="state"></param>
+            /// <param name="targetWeight"></param>
+            /// <param name="time"></param>
+            private void SetupLerp(StateInfo state, float targetWeight, float time)
+            {
+                float travel = Mathf.Abs(state.weight - targetWeight);
+                float newSpeed = time != 0f ? travel / time : Mathf.Infinity;
+
+                // If we're fading to the same target as before but slower, assume CrossFade was called multiple times and ignore new speed
+                if (state.fading && Mathf.Approximately(state.targetWeight, targetWeight) && newSpeed < state.fadeSpeed)
+                    return;
+
+                state.FadeTo(targetWeight, newSpeed);
+            }
+
             private void UpdateStates(float deltaTime)
             {
                 bool mustUpdateWeights = false;
@@ -465,7 +483,7 @@ namespace PlayableAnimator
                 }
             }
 
-            public void AddState(string stateName, bool isBlendTree, string groupName = null)
+            public void AddState(string stateName, bool isBlendTree, Playable playable, string groupName = null)
             {
                 if (FindState(stateName) != null)
                 {
@@ -477,6 +495,9 @@ namespace PlayableAnimator
                 state.stateName = stateName;
                 state.isBlendTree = isBlendTree;
                 state.stateGroupName = groupName;
+
+                state.SetPlayable(playable);
+                state.Pause();
 
                 int emptyIndex = m_States.FindIndex(s => s == null);
                 if (emptyIndex != -1)
@@ -514,7 +535,24 @@ namespace PlayableAnimator
                 StateInfo state = FindState(stateName);
                 if (state != null)
                 {
+                    StopAllState();
                     state.Enable();
+                    state.ForceWeight(1.0f);
+                }
+            }
+
+            public void EnableState(string stateName, float fixedTime)
+            {
+                StateInfo state = FindState(stateName);
+                if (state != null)
+                {
+                    StopAllState();
+                    state.Enable();
+
+                    if (fixedTime >= 0)
+                    {
+                        state.SetTime(fixedTime);
+                    }
                 }
             }
 
@@ -524,6 +562,46 @@ namespace PlayableAnimator
                 if (state != null)
                 {
                     state.Disable();
+                }
+            }
+
+            public void StopAllState()
+            {
+                for (int i = 0; i < m_States.Count; i++)
+                {
+                    if (m_States[i] == null) continue;
+                    m_States[i].Stop();
+                }
+            }
+
+            public void Crossfade(string stateName, float time, bool isNormalnize)
+            {
+                if (time == 0)
+                {
+                    EnableState(stateName);
+                    return;
+                }
+
+                int stateIndex = -1;
+                for (int i = 0; i < m_States.Count; i++)
+                {
+                    StateInfo state = m_States[i];
+                    if (state == null)
+                        continue;
+
+                    if (state.stateName == stateName)
+                    {
+                        state.Enable();
+                        stateIndex = state.index;
+                    }
+
+                    if (state.enabled == false)     // 跳过停止的状态
+                        continue;
+
+                    float targetWeight = state.index == stateIndex ? 1.0f : 0.0f;   // 还在运行的旧状态，权重设置为0，新状态的权重设置为1
+
+                    time = isNormalnize ? (Mathf.Clamp01(time) * state.playableDuration) : time;
+                    SetupLerp(state, targetWeight, time);
                 }
             }
 
@@ -583,6 +661,7 @@ namespace PlayableAnimator
             m_StateLayers.Add(new StateLayer(0, graph));     // 添加默认层
 
             m_LayerMixer = AnimationLayerMixerPlayable.Create(graph, 1);
+            m_LayerMixer.SetInputWeight(0, 1f);
 
             m_Graph = graph;
         }
@@ -704,34 +783,46 @@ namespace PlayableAnimator
             return stateLayer;
         }
 
-        public void AddState(string stateName, bool isBlendTree, string groupName = null, int layer = 0)
+        public void AddState(string stateName, bool isBlendTree, Playable playable, string groupName = null, int layer = 0)
         {
             StateLayer stateLayer = GetStateLayer(layer);
-            if (stateLayer != null) { AddState(stateName, isBlendTree, groupName); }
+            if (stateLayer != null) { stateLayer.AddState(stateName, isBlendTree, playable, groupName); }
         }
 
-        public void RemoveState(string stateName, string groupName = null, int layer = 0)
+        public void RemoveState(string stateName, int layer = 0)
         {
             StateLayer stateLayer = GetStateLayer(layer);
-            if (stateLayer != null) { RemoveState(stateName); }
+            if (stateLayer != null) { stateLayer.RemoveState(stateName); }
         }
 
-        public void EnableState(string stateName, string groupName = null, int layer = 0)
+        public void EnableState(string stateName, int layer = 0)
         {
             StateLayer stateLayer = GetStateLayer(layer);
-            if (stateLayer != null) { EnableState(stateName); }
+            if (stateLayer != null) { stateLayer.EnableState(stateName); }
         }
 
-        public void DisableState(string stateName, string groupName = null, int layer = 0)
+        public void EnableState(string stateName, float fixedTime, int layer = 0)
         {
             StateLayer stateLayer = GetStateLayer(layer);
-            if (stateLayer != null) { DisableState(stateName); }
+            if (stateLayer != null) { stateLayer.EnableState(stateName, fixedTime); }
         }
 
-        public void SetInputWeight(string stateName, float weight, string groupName = null, int layer = 0)
+        public void DisableState(string stateName, int layer = 0)
         {
             StateLayer stateLayer = GetStateLayer(layer);
-            if (stateLayer != null) { SetInputWeight(stateName, weight); }
+            if (stateLayer != null) { stateLayer.DisableState(stateName); }
+        }
+
+        public void SetInputWeight(string stateName, float weight, int layer = 0)
+        {
+            StateLayer stateLayer = GetStateLayer(layer);
+            if (stateLayer != null) { stateLayer.SetInputWeight(stateName, weight); }
+        }
+
+        public void Crossfade(string stateName, float fixedTime, bool isNormalnize, int layer = 0)
+        {
+            StateLayer stateLayer = GetStateLayer(layer);
+            if (stateLayer != null) { stateLayer.Crossfade(stateName, fixedTime, isNormalnize); }
         }
         #endregion
     }

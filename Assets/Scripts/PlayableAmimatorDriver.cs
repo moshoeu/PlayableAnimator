@@ -9,7 +9,9 @@ namespace PlayableAnimator
         private Playable m_Playable;
         private PlayableStateController m_StateController;
 
-        public PlayableAmimatorDriver(PlayableGraph graph, PlayableStateController ctrl)
+        public Playable playable { get { return m_Playable; } }
+
+        public void Initialize(PlayableGraph graph, PlayableStateController ctrl)
         {
             m_Graph = graph;
             m_StateController = ctrl;
