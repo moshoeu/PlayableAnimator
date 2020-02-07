@@ -1,4 +1,10 @@
-﻿using System.Collections;
+﻿/**
+ *Created on 2020.2
+ *Author:ZhangYuhao
+ *Title: 动画控制器组件
+ */
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Playables;
@@ -50,7 +56,7 @@ namespace PlayableAnimator
             m_Animator = GetComponent<Animator>();
             m_Graph = PlayableGraph.Create();
             m_Graph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
-            m_StateController = new PlayableStateController(m_Graph);
+            m_StateController = new PlayableStateController(m_Graph, m_Animator);
 
             var template = new PlayableAmimatorDriver();
             template.Initialize(m_Graph, m_StateController);
@@ -99,28 +105,43 @@ namespace PlayableAnimator
             {
                 clipPlayable.SetDuration(clip.length);
             }
-            m_StateController.AddState(stateName, false, clipPlayable);
+            m_StateController.AddState(stateName, clipPlayable);
+        }
+        private void AddBlendTree()
+        {
+            PlayableStateController.BlendTreeConfig[] configs = new PlayableStateController.BlendTreeConfig[clips.Length];
+            for (int i = 0; i < configs.Length; i++)
+            {
+                AnimationClipPlayable clipPlayable = AnimationClipPlayable.Create(m_Graph, clips[i]);
+                configs[i].playable = clipPlayable;
+                configs[i].speed = 1;
+                configs[i].threshold = i;
+            }
+            Playable playable = Playable.Create(m_Graph, 1);
+            m_StateController.AddBlendTree("tree", playable, configs, "Blend");
         }
         public AnimationClip[] clips;
         private void testLoad()
         {
-            for (int i = 0; i < clips.Length; i++)
-            {
-                AddState(clips[i], i.ToString());
-            }
+            //for (int i = 0; i < clips.Length; i++)
+            //{
+            //    AddState(clips[i], i.ToString());
+            //}
             StartCoroutine(testPlay());
         }
         IEnumerator testPlay()
         {
-            while (true)
-            {
-                yield return new WaitForSeconds(0.1f);
-                CrossfadeInFixedTime("0", 0.2f);
-                yield return new WaitForSeconds(0.2f);
-                CrossfadeInFixedTime("1", 0.2f);
-                yield return new WaitForSeconds(0.2f);
-                CrossfadeInFixedTime("2", 0.2f);
-            }
+            //while (true)
+            //{
+            //    yield return new WaitForSeconds(0.2f);
+            //    CrossfadeInFixedTime("0", 0.2f);
+            //    yield return new WaitForSeconds(0.2f);
+            //    CrossfadeInFixedTime("1", 0.2f);
+            //    yield return new WaitForSeconds(0.2f);
+            //    CrossfadeInFixedTime("2", 0.2f);
+            //}
+            yield return new WaitForSeconds(0.2f);
+            Play("tree");
         }
     }
 }

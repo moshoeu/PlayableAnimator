@@ -1,4 +1,10 @@
-﻿using UnityEngine;
+﻿/**
+ *Created on 2020.2
+ *Author:ZhangYuhao
+ *Title: 动画控制器脚本化Playable回调
+ */
+
+using UnityEngine;
 using UnityEngine.Playables;
 
 namespace PlayableAnimator
