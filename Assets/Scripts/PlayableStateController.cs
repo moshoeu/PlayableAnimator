@@ -17,7 +17,8 @@ namespace PlayableAnimator
         private List<StateLayer> m_StateLayers;
         private PlayableGraph m_Graph;
         private AnimationLayerMixerPlayable m_LayerMixer;
-        private Animator m_Animator;
+        private PlayableAnimatorParameter m_Params;
+        public PlayableAnimatorParameter Params { get { return m_Params; } }
 
         public struct BlendTreeConfig
         {
@@ -29,14 +30,15 @@ namespace PlayableAnimator
 
         public PlayableStateController(PlayableGraph graph, Animator animator)
         {
+            m_Params = new PlayableAnimatorParameter();
+
             m_StateLayers = new List<StateLayer>();
-            m_StateLayers.Add(new StateLayer(0, graph, m_Animator));     // 添加默认层
+            m_StateLayers.Add(new StateLayer(0, graph, m_Params));     // 添加默认层
 
             m_LayerMixer = AnimationLayerMixerPlayable.Create(graph, 1);
             m_LayerMixer.SetInputWeight(0, 1f);
 
             m_Graph = graph;
-            m_Animator = animator;
         }
 
         public void Update(float deltaTime)
@@ -58,12 +60,12 @@ namespace PlayableAnimator
             if (emptyIndex != -1)
             {
                 newLayerIndex = emptyIndex;
-                m_StateLayers[newLayerIndex] = new StateLayer(newLayerIndex, m_Graph, m_Animator);
+                m_StateLayers[newLayerIndex] = new StateLayer(newLayerIndex, m_Graph, m_Params);
             }
             else
             {
                 newLayerIndex = m_StateLayers.Count;
-                m_StateLayers.Add(new StateLayer(newLayerIndex, m_Graph, m_Animator));
+                m_StateLayers.Add(new StateLayer(newLayerIndex, m_Graph, m_Params));
 
                 m_LayerMixer.SetInputCount(m_StateLayers.Count);
             }

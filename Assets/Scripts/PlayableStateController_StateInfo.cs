@@ -184,6 +184,7 @@ namespace PlayableAnimator
                         float curWeight = Mathf.Clamp01((nextThreshold - param) / (nextThreshold - curThreshold));
                         m_BlendTreeConfigs[i].weight = curWeight;
                         m_BlendTreeConfigs[i + 1].weight = 1 - curWeight;
+                        i++;
                     }
                     else
                     {

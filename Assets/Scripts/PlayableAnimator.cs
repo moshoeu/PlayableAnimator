@@ -118,6 +118,8 @@ namespace PlayableAnimator
                 configs[i].threshold = i;
             }
             Playable playable = Playable.Create(m_Graph, 1);
+            m_StateController.Params.AddFloat("Blend");
+            m_StateController.Params.SetFloat("Blend", 0.8f);
             m_StateController.AddBlendTree("tree", playable, configs, "Blend");
         }
         public AnimationClip[] clips;
@@ -127,6 +129,7 @@ namespace PlayableAnimator
             //{
             //    AddState(clips[i], i.ToString());
             //}
+            AddBlendTree();
             StartCoroutine(testPlay());
         }
         IEnumerator testPlay()

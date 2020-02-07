@@ -20,7 +20,7 @@ namespace PlayableAnimator
             private PlayableGraph m_Graph;
 
             private AnimationMixerPlayable m_Mixer;
-            private Animator m_Animator;
+            private PlayableAnimatorParameter m_Params;
 
             private AvatarMask m_AvatarMask;
             public AvatarMask avatarMask
@@ -45,12 +45,12 @@ namespace PlayableAnimator
             public int Count { get { return m_Count; } }
             private int m_Count;
 
-            public StateLayer(int layerIndex, PlayableGraph graph, Animator animator)
+            public StateLayer(int layerIndex, PlayableGraph graph, PlayableAnimatorParameter param)
             {
                 this.layerIndex = layerIndex;
                 m_States = new List<StateInfo>();
                 m_Graph = graph;
-                m_Animator = animator;
+                m_Params = param;
                 m_Mixer = AnimationMixerPlayable.Create(m_Graph, 1, true);
                 isLayerDirty = true;
             }
@@ -100,7 +100,7 @@ namespace PlayableAnimator
                     // 处理混合树状态
                     if (state.isBlendTree && state.isBlendTreeDirty)
                     {
-                        float param = m_Animator.GetFloat(state.blendTreeParameter);
+                        float param = m_Params.GetFloat(state.blendTreeParameter);
                         state.CalBlendTreeWeight(param);
                     }
 
@@ -218,12 +218,12 @@ namespace PlayableAnimator
                 state.isBlendTree = isBlendTree;
                 state.stateGroupName = groupName;
 
+                state.SetPlayable(playable);
                 if (isBlendTree)
                 {
                     state.SetBlendTreePlayable(blendTreePlayables);
                     state.blendTreeParameter = blendTreeParam;
                 }
-                state.SetPlayable(playable);
                 state.Pause();
 
                 int emptyIndex = m_States.FindIndex(s => s == null);
