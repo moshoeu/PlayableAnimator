@@ -10,7 +10,7 @@ using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Animations;
 
-namespace PlayableAnimator
+namespace CostumeAnimator
 {
     public partial class PlayableStateController
     {
@@ -133,12 +133,18 @@ namespace PlayableAnimator
             {
                 m_BlendTreeConfigs = configs;
 
+                if (configs != null && configs.Length > 0)
+                {
+                    m_ClipLength = configs[0].clip.length;
+                }
+
                 if (m_BlendTreeMixer.Equals(AnimationMixerPlayable.Null))
                 {
                     // 创建混合树混合节点，与状态playable相连
                     var graph = m_Playable.GetGraph();
                     m_BlendTreeMixer = AnimationMixerPlayable.Create(graph, m_BlendTreeConfigs.Length, true);
                     graph.Connect(m_BlendTreeMixer, 0, m_Playable, 0);
+                    m_Playable.SetInputWeight(0, 1f);
                 }
                 else if (m_BlendTreeMixer.GetInputCount() != m_BlendTreeConfigs.Length)
                 {
@@ -147,28 +153,6 @@ namespace PlayableAnimator
 
                 m_IsBlendTreeDirty = true;
             }
-
-            ///// <summary>
-            ///// 对混合树结点排序
-            ///// </summary>
-            //public void SortBlendTreeConfig()
-            //{
-            //    System.Array.Sort(blendTreeConfigs, (a, b) =>
-            //    {
-            //        if (a.threshold < b.threshold)
-            //        {
-            //            return 1;
-            //        }
-            //        else if (a.threshold == b.threshold)
-            //        {
-            //            return 0;
-            //        }
-            //        else
-            //        {
-            //            return -1;
-            //        }
-            //    });
-            //}
 
             /// <summary>
             /// 按照参数大小计算混合树各结点权重
@@ -205,13 +189,18 @@ namespace PlayableAnimator
                 // 改变playable权重
                 for (int i = 0; i < m_BlendTreeConfigs.Length; i++)
                 {
-                    var graph = m_Playable.GetGraph();
                     var playable = m_BlendTreeConfigs[i].playable;
-                    graph.Connect(playable, 0, m_BlendTreeMixer, i);
                     m_BlendTreeMixer.SetInputWeight(i, m_BlendTreeConfigs[i].weight);
                     playable.SetSpeed(m_BlendTreeConfigs[i].speed);
+
+                    if (!m_IsBlendTreeInit)
+                    {
+                        var graph = m_Playable.GetGraph();
+                        graph.Connect(playable, 0, m_BlendTreeMixer, i);
+                    }
                 }
 
+                m_IsBlendTreeInit = true;
                 m_IsBlendTreeDirty = false;
             }
 
@@ -223,7 +212,8 @@ namespace PlayableAnimator
             public bool isBlendTree;
 
             private bool m_IsBlendTreeDirty = false;
-            public bool isBlendTreeDirty { get { return m_IsBlendTreeDirty; } }
+            private bool m_IsBlendTreeInit = false;
+            public bool isBlendTreeDirty { get { return m_IsBlendTreeDirty; } }     // todo: 暂时不用 混合树参数改变无法通知到每个状态
             public string blendTreeParameter;
             private AnimationMixerPlayable m_BlendTreeMixer;
 
@@ -258,6 +248,16 @@ namespace PlayableAnimator
 
             #region Base
             public string stateGroupName;   // 归属状态集合名字
+
+            private AnimationClip m_Clip;
+            public AnimationClip Clip
+            {
+                set
+                {
+                    m_Clip = value;
+                    m_ClipLength = m_Clip.length;
+                }
+            }
 
             public bool enabled
             {
@@ -295,6 +295,14 @@ namespace PlayableAnimator
             {
                 get { return (float)m_Playable.GetDuration(); }
             }
+
+            private float m_ClipLength;
+            public float clipLength
+            {
+                get { return m_ClipLength; }
+            }
+
+
 
             public bool isDone { get { return m_Playable.IsDone(); } }
 

@@ -10,7 +10,7 @@ using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Animations;
 
-namespace PlayableAnimator
+namespace CostumeAnimator
 {
     public partial class PlayableStateController : IPlayableAnimatorNode
     {
@@ -23,20 +23,24 @@ namespace PlayableAnimator
         public struct BlendTreeConfig
         {
             public Playable playable;
+            public AnimationClip clip;
             public float threshold;
             public float speed;
             public float weight;
         }
 
-        public PlayableStateController(PlayableGraph graph, Animator animator)
+        public PlayableStateController(PlayableGraph graph)
         {
             m_Params = new PlayableAnimatorParameter();
 
             m_StateLayers = new List<StateLayer>();
-            m_StateLayers.Add(new StateLayer(0, graph, m_Params));     // 添加默认层
 
             m_LayerMixer = AnimationLayerMixerPlayable.Create(graph, 1);
             m_LayerMixer.SetInputWeight(0, 1f);
+
+            var layer = new StateLayer(0, graph, m_Params);
+            layer.SetPlayableOutput(0, layer.layerIndex, m_LayerMixer);
+            m_StateLayers.Add(layer);     // 添加默认层
 
             m_Graph = graph;
         }
@@ -53,24 +57,27 @@ namespace PlayableAnimator
         }
 
         #region Layer
-        public int AddLayer()
+        public void AddLayer(int layerIndex)
         {
+            if (-1 != m_StateLayers.FindIndex(l=> l!=null && l.layerIndex == layerIndex))
+            {
+                Debug.LogErrorFormat("layer:{0} has existed!", layerIndex);
+                return;
+            }
+
+            var layer = new StateLayer(layerIndex, m_Graph, m_Params);
+
             int emptyIndex = m_StateLayers.FindIndex(l => l == null);
-            int newLayerIndex = 0;
             if (emptyIndex != -1)
             {
-                newLayerIndex = emptyIndex;
-                m_StateLayers[newLayerIndex] = new StateLayer(newLayerIndex, m_Graph, m_Params);
+                m_StateLayers[emptyIndex] = layer;
             }
             else
             {
-                newLayerIndex = m_StateLayers.Count;
-                m_StateLayers.Add(new StateLayer(newLayerIndex, m_Graph, m_Params));
-
+                m_StateLayers.Add(layer);
                 m_LayerMixer.SetInputCount(m_StateLayers.Count);
             }
-
-            return newLayerIndex;
+            layer.SetPlayableOutput(0, layer.layerIndex, m_LayerMixer);
         }
 
         public void RemoveLayer(int layerIndex)
@@ -96,6 +103,14 @@ namespace PlayableAnimator
             StateLayer layer = m_StateLayers[layerIndex];
             layer.isAdditive = isAdditive;
             m_LayerMixer.SetLayerAdditive((uint)layerIndex, isAdditive);        // todo: 观察是否可以放这里，效果不好则放在UpdateLayers里
+        }
+
+        public void SetLayerWeight(int layerIndex, float weight)
+        {
+            if (!CheckLayerIfExist(layerIndex)) return;
+            StateLayer layer = m_StateLayers[layerIndex];
+            layer.weight = Mathf.Clamp01(weight);
+            layer.isLayerDirty = true;
         }
 
         private bool CheckLayerIfExist(int layerIndex)
@@ -125,7 +140,7 @@ namespace PlayableAnimator
 
                 if (layer.isLayerDirty)
                 {
-                    layer.SetPlayableOutput(0, layer.layerIndex, m_LayerMixer);
+                    m_LayerMixer.SetInputWeight(layer.layerIndex, layer.weight);
                     layer.isLayerDirty = false;
                 }
             }
@@ -133,16 +148,16 @@ namespace PlayableAnimator
         #endregion
 
         #region State
-        public void AddState(string stateName, Playable playable, string groupName = null, int layer = 0)
+        public void AddState(string stateName, Playable playable, AnimationClip clip, string groupName = null, int layer = 0)
         {
             StateLayer stateLayer = GetStateLayer(layer);
-            if (stateLayer != null) { stateLayer.AddState(stateName, false, playable, groupName); }
+            if (stateLayer != null) { stateLayer.AddState(stateName, false, playable, clip, groupName); }
         }
 
         public void AddBlendTree(string stateName, Playable playable, BlendTreeConfig[] configs, string blendTreeParam, string groupName = null, int layer = 0)
         {
             StateLayer stateLayer = GetStateLayer(layer);
-            if (stateLayer != null) { stateLayer.AddState(stateName, true, playable, groupName, configs, blendTreeParam); }
+            if (stateLayer != null) { stateLayer.AddState(stateName, true, playable, null, groupName, configs, blendTreeParam); }
         }
 
         public void RemoveState(string stateName, int layer = 0)
@@ -193,15 +208,9 @@ namespace PlayableAnimator
         private StateLayer GetStateLayer(int layer)
         {
             StateLayer stateLayer = null;
-            if (layer >= m_StateLayers.Count)
-            {
-                Debug.LogErrorFormat("Get state layer fail, state group:{0} is not existing!", layer);
-            }
 
-            else
-            {
-                stateLayer = m_StateLayers[layer];
-            }
+            int index = m_StateLayers.FindIndex((l => l != null && l.layerIndex == layer));
+            stateLayer = (index == -1) ? stateLayer : m_StateLayers[index];
 
             return stateLayer;
         }

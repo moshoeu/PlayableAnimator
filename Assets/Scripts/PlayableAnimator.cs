@@ -10,15 +10,19 @@ using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Animations;
 
-namespace PlayableAnimator
+namespace CostumeAnimator
 {
     [RequireComponent(typeof(Animator))]
     public class PlayableAnimator : MonoBehaviour
     {
         private PlayableGraph m_Graph;
         private Animator m_Animator;
-        private PlayableStateController m_StateController;
         private Playable m_OutputPlayable;
+        private PlayableStateController m_StateController;
+        public PlayableStateController StateController {get { return m_StateController; } }
+
+        [SerializeField]
+        private AssetStateController _assetStateController;
 
         private bool m_IsInitialized = false;
 
@@ -26,7 +30,10 @@ namespace PlayableAnimator
         private void Start()
         {
             Initialize();
-            testLoad();
+            if (_assetStateController != null)
+            {
+                _assetStateController.AddStates(this);
+            }
         }
 
         private void OnEnable()
@@ -56,7 +63,7 @@ namespace PlayableAnimator
             m_Animator = GetComponent<Animator>();
             m_Graph = PlayableGraph.Create();
             m_Graph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
-            m_StateController = new PlayableStateController(m_Graph, m_Animator);
+            m_StateController = new PlayableStateController(m_Graph);
 
             var template = new PlayableAmimatorDriver();
             template.Initialize(m_Graph, m_StateController);
@@ -97,55 +104,51 @@ namespace PlayableAnimator
             m_StateController.Crossfade(stateName, fixedTime, false, layer);
         }
 
-        // test
-        private void AddState(AnimationClip clip, string stateName = null, string groupName = null, int layer = 0)
+        public void AddState(AnimationClip clip, string stateName = null, string groupName = null, int layer = 0)
         {
             AnimationClipPlayable clipPlayable = AnimationClipPlayable.Create(m_Graph, clip);
             if (!clip.isLooping || clip.wrapMode == WrapMode.Once)
             {
                 clipPlayable.SetDuration(clip.length);
             }
-            m_StateController.AddState(stateName, clipPlayable);
+            m_StateController.AddState(stateName, clipPlayable, clip, groupName, layer);
         }
-        private void AddBlendTree()
+
+        public void AddBlendTree(PlayableStateController.BlendTreeConfig[] configs, string paramName, string stateName = null, string groupName = null, int layer = 0)
         {
-            PlayableStateController.BlendTreeConfig[] configs = new PlayableStateController.BlendTreeConfig[clips.Length];
+            if (configs == null) return;
             for (int i = 0; i < configs.Length; i++)
             {
-                AnimationClipPlayable clipPlayable = AnimationClipPlayable.Create(m_Graph, clips[i]);
+                AnimationClipPlayable clipPlayable = AnimationClipPlayable.Create(m_Graph, configs[i].clip);
                 configs[i].playable = clipPlayable;
-                configs[i].speed = 1;
-                configs[i].threshold = i;
             }
             Playable playable = Playable.Create(m_Graph, 1);
-            m_StateController.Params.AddFloat("Blend");
-            m_StateController.Params.SetFloat("Blend", 0.8f);
-            m_StateController.AddBlendTree("tree", playable, configs, "Blend");
+            m_StateController.AddBlendTree(stateName, playable, configs, paramName);
         }
-        public AnimationClip[] clips;
-        private void testLoad()
-        {
-            //for (int i = 0; i < clips.Length; i++)
-            //{
-            //    AddState(clips[i], i.ToString());
-            //}
-            AddBlendTree();
-            StartCoroutine(testPlay());
-        }
-        IEnumerator testPlay()
-        {
-            //while (true)
-            //{
-            //    yield return new WaitForSeconds(0.2f);
-            //    CrossfadeInFixedTime("0", 0.2f);
-            //    yield return new WaitForSeconds(0.2f);
-            //    CrossfadeInFixedTime("1", 0.2f);
-            //    yield return new WaitForSeconds(0.2f);
-            //    CrossfadeInFixedTime("2", 0.2f);
-            //}
-            yield return new WaitForSeconds(0.2f);
-            Play("tree");
-        }
+        //public AnimationClip[] clips;
+        //private void testLoad()
+        //{
+        //    //for (int i = 0; i < clips.Length; i++)
+        //    //{
+        //    //    AddState(clips[i], i.ToString());
+        //    //}
+        //    AddBlendTree();
+        //    StartCoroutine(testPlay());
+        //}
+        //IEnumerator testPlay()
+        //{
+        //    //while (true)
+        //    //{
+        //    //    yield return new WaitForSeconds(0.2f);
+        //    //    CrossfadeInFixedTime("0", 0.2f);
+        //    //    yield return new WaitForSeconds(0.2f);
+        //    //    CrossfadeInFixedTime("1", 0.2f);
+        //    //    yield return new WaitForSeconds(0.2f);
+        //    //    CrossfadeInFixedTime("2", 0.2f);
+        //    //}
+        //    yield return new WaitForSeconds(0.2f);
+        //    Play("tree");
+        //}
     }
 }
 

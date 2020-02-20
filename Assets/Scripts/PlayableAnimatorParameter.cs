@@ -8,7 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace PlayableAnimator
+namespace CostumeAnimator
 {
     public class PlayableAnimatorParameter : IAnimatorParameter
     {
@@ -307,6 +307,13 @@ namespace PlayableAnimator
             }
 
             param.val = val;
+        }
+
+        public bool ContainsFloat(string name)
+        {
+            if (m_FloatParams == null) return false;
+
+            return (m_FloatParams.FindIndex(p => p.isVaild && p.name == name) != -1);
         }
     }
 }

@@ -10,7 +10,7 @@ using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Animations;
 
-namespace PlayableAnimator
+namespace CostumeAnimator
 {
     public partial class PlayableStateController
     {
@@ -34,6 +34,8 @@ namespace PlayableAnimator
             public bool isAdditive;
             public bool isLayerDirty;
 
+            private Dictionary<string, float> _lastParamValue;
+
             public StateInfo this[int i]
             {
                 get
@@ -52,7 +54,9 @@ namespace PlayableAnimator
                 m_Graph = graph;
                 m_Params = param;
                 m_Mixer = AnimationMixerPlayable.Create(m_Graph, 1, true);
-                isLayerDirty = true;
+                //isLayerDirty = true;
+
+                _lastParamValue = new Dictionary<string, float>();
             }
 
             private void DisconnectInput(int index)
@@ -98,10 +102,21 @@ namespace PlayableAnimator
                     state.InvalidateTime();
 
                     // 处理混合树状态
-                    if (state.isBlendTree && state.isBlendTreeDirty)
+                    if (state.isBlendTree)
                     {
+                        bool isChangeParam = false;
+                        float lastParam = 0;
                         float param = m_Params.GetFloat(state.blendTreeParameter);
-                        state.CalBlendTreeWeight(param);
+                        isChangeParam = !_lastParamValue.TryGetValue(state.blendTreeParameter, out lastParam);
+                        if (!isChangeParam)
+                        {
+                            isChangeParam = lastParam != param;
+                        }
+                        if (isChangeParam)
+                        {
+                            state.CalBlendTreeWeight(param);
+                            _lastParamValue[state.blendTreeParameter] = param;
+                        }
                     }
 
                     // 处理状态过渡 设置权重
@@ -199,7 +214,7 @@ namespace PlayableAnimator
                 }
             }
 
-            public void AddState(string stateName, bool isBlendTree, Playable playable, string groupName = null, BlendTreeConfig[] blendTreePlayables = null, string blendTreeParam = null)
+            public void AddState(string stateName, bool isBlendTree, Playable playable, AnimationClip clip = null, string groupName = null, BlendTreeConfig[] blendTreePlayables = null, string blendTreeParam = null)
             {
                 if (FindState(stateName) != null)
                 {
@@ -223,6 +238,10 @@ namespace PlayableAnimator
                 {
                     state.SetBlendTreePlayable(blendTreePlayables);
                     state.blendTreeParameter = blendTreeParam;
+                }
+                else
+                {
+                    state.Clip = clip;
                 }
                 state.Pause();
 

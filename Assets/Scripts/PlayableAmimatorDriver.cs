@@ -7,7 +7,7 @@
 using UnityEngine;
 using UnityEngine.Playables;
 
-namespace PlayableAnimator
+namespace CostumeAnimator
 {
     public class PlayableAmimatorDriver : PlayableBehaviour
     {
