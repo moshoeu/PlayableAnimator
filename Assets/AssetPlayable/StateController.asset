@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stateLayers:
   - {fileID: 11400000, guid: 9e111396922e6124597452efd36c013d, type: 2}
+  - {fileID: 11400000, guid: aa3e6b2992813094197145dfb961a36c, type: 2}

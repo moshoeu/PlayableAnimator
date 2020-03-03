@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6e13dccf4303fa64cb6391228f999c6f, type: 3}
   m_Name: layer_GetBall
   m_EditorClassIdentifier: 
-  stateGroups: []
+  stateGroups:
+  - {fileID: 11400000, guid: bb590b0375d09c84b81512b997eab725, type: 2}
   avatarMask: {fileID: 31900000, guid: d1a0e585edb8114488a8ac2656a85694, type: 2}
   isAdditive: 0

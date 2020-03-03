@@ -10,14 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 643f5f04aa3b0f64382e2a15c7914f78, type: 3}
-  m_Name: StateGroup
+  m_Name: group_askball
   m_EditorClassIdentifier: 
   groupName: 
   motions:
-  - clip: {fileID: 7400000, guid: 11f4569fdda55974db5752497836e236, type: 2}
+  - clip: {fileID: 7400000, guid: 512b006fcf0465941b683f918346f458, type: 2}
     threshold: 0
     speed: 0
     blendTreeType: 0
     stateName: 
-  blendTrees:
-  - {fileID: 11400000, guid: b4d909df1fe8afb43bb9c780a34925b6, type: 2}
+  blendTrees: []
