@@ -138,13 +138,14 @@ namespace CostumeAnimator
                     m_ClipLength = configs[0].clip.length;
                 }
 
-                if (m_BlendTreeMixer.Equals(AnimationMixerPlayable.Null))
+                if (!m_IsBlendTreeRootInit)
                 {
                     // 创建混合树混合节点，与状态playable相连
                     var graph = m_Playable.GetGraph();
                     m_BlendTreeMixer = AnimationMixerPlayable.Create(graph, m_BlendTreeConfigs.Length, true);
                     graph.Connect(m_BlendTreeMixer, 0, m_Playable, 0);
                     m_Playable.SetInputWeight(0, 1f);
+                    m_IsBlendTreeRootInit = true;
                 }
                 else if (m_BlendTreeMixer.GetInputCount() != m_BlendTreeConfigs.Length)
                 {
@@ -211,8 +212,10 @@ namespace CostumeAnimator
             #region BlendTree
             public bool isBlendTree;
 
+
+            private bool m_IsBlendTreeRootInit = false;     // 混合树根节点playable初始化
             private bool m_IsBlendTreeDirty = false;
-            private bool m_IsBlendTreeInit = false;
+            private bool m_IsBlendTreeInit = false;         // 混合树子节点初始化
             public bool isBlendTreeDirty { get { return m_IsBlendTreeDirty; } }     // todo: 暂时不用 混合树参数改变无法通知到每个状态
             public string blendTreeParameter;
             private AnimationMixerPlayable m_BlendTreeMixer;

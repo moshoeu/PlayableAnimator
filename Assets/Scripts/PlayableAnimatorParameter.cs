@@ -21,7 +21,7 @@ namespace CostumeAnimator
             public Parameter(string name)
             {
                 this.name = name;
-                val = default;
+                val = default(T);
                 isVaild = true;
             }
         }
@@ -101,7 +101,7 @@ namespace CostumeAnimator
 
         public bool GetBool(string name)
         {
-            bool res = default;
+            bool res = default(bool);
             int find = m_BoolParams.FindIndex(b => b.isVaild && b.name == name);
             if (find == -1)
             {
@@ -117,7 +117,7 @@ namespace CostumeAnimator
 
         public bool GetBool(int id)
         {
-            bool res = default;
+            bool res = default(bool);
             if (id >= m_BoolParams.Count)
             {
                 Debug.LogErrorFormat("cant find id: {0} bool parameter", id);
@@ -141,7 +141,7 @@ namespace CostumeAnimator
 
         public float GetFloat(string name)
         {
-            float res = default;
+            float res = default(float);
             int find = m_FloatParams.FindIndex(b => b.isVaild && b.name == name);
             if (find == -1)
             {
@@ -157,7 +157,7 @@ namespace CostumeAnimator
 
         public float GetFloat(int id)
         {
-            float res = default;
+            float res = default(float);
             if (id >= m_BoolParams.Count)
             {
                 Debug.LogErrorFormat("cant find id: {0} bool parameter", id);
@@ -181,7 +181,7 @@ namespace CostumeAnimator
 
         public int GetInt(string name)
         {
-            int res = default;
+            int res = default(int);
             int find = m_IntParams.FindIndex(b => b.isVaild && b.name == name);
             if (find == -1)
             {
@@ -197,7 +197,7 @@ namespace CostumeAnimator
 
         public int GetInt(int id)
         {
-            int res = default;
+            int res = default(int);
             if (id >= m_BoolParams.Count)
             {
                 Debug.LogErrorFormat("cant find id: {0} bool parameter", id);
