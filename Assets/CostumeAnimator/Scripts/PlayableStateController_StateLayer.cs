@@ -32,6 +32,7 @@ namespace CostumeAnimator
             public int layerIndex;
             public float weight;
             public bool isAdditive;
+            public bool IKPass;
             public bool isLayerDirty;
 
             private Dictionary<string, float> _lastParamValue;

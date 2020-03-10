@@ -10,6 +10,7 @@ namespace CostumeAnimator
         public AssetStateGroup[] stateGroups;
         public AvatarMask avatarMask;
         public bool isAdditive;
+        public bool _IKPass;
 
         public void AddStates(PlayableAnimator playableAnimator, int layer)
         {

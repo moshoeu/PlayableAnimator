@@ -109,6 +109,8 @@ namespace CostumeAnimator
             assetCtrl.stateLayers = new AssetStateLayer[animCtrlLayers.Length];
             for (int i = 0; i < animCtrlLayers.Length; i++)
             {
+                EditorUtility.DisplayProgressBar("Transform Layer...", string.Format("duel with the {0} Layer...", i), i / (float)animCtrlLayers.Length);
+
                 string layerName = string.Format("{0}_layer{1}", animCtrl.name, i );
                 AssetStateLayer assetLayer = CreateLayerAsset(layerName);
                 assetCtrl.stateLayers[i] = assetLayer;
@@ -131,6 +133,8 @@ namespace CostumeAnimator
                 ChildAnimatorStateMachine[] subMachines = animCtrlStateMachine.stateMachines;
                 for (int j = 0; j < subMachines.Length; j++)
                 {
+                    EditorUtility.DisplayProgressBar("Transform SubMachines...", string.Format("duel with the {0} Machine...", j), j / (float)subMachines.Length);
+
                     AnimatorStateMachine originSubStateMachine = subMachines[j].stateMachine;
                     string subGroupName = string.Format("{0}_group_{1}_{2}", layerName, j, originSubStateMachine.name);
                     AssetStateGroup assetSubGroup = CreateGroupAsset(subGroupName);
@@ -142,12 +146,10 @@ namespace CostumeAnimator
                     {
                         Debug.LogErrorFormat("not support more then 1 layer subMachines, subMachine name:{0}", originSubStateMachine.name);
                     }
-
-                    EditorUtility.DisplayProgressBar("Transform SubMachines...", string.Format("duel with the {0} Machine...", j), j / (float)subMachines.Length);
                 }
 
                 assetLayer.stateGroups = assetGroups.ToArray();
-                EditorUtility.DisplayProgressBar("Transform Layer...", string.Format("duel with the {0} Layer...", i), i / (float)animCtrlLayers.Length);
+                
             }
 
             EditorUtility.ClearProgressBar();
@@ -166,6 +168,8 @@ namespace CostumeAnimator
             List<AssetBlendTree> assetBlendTrees = new List<AssetBlendTree>();
             for (int j = 0; j < animCtrlStates.Length; j++)
             {
+                EditorUtility.DisplayProgressBar("Transform State Group...", string.Format("duel with the {0} state...", j), j / (float)animCtrlStates.Length);
+
                 AnimatorState state = animCtrlStates[j].state;
                 Motion motion = state.motion;
                 bool isBlendTree = motion is BlendTree;
@@ -187,8 +191,6 @@ namespace CostumeAnimator
                     newMotion.stateName = state.name;
                     assetMotions.Add(newMotion);
                 }
-
-                EditorUtility.DisplayProgressBar("Transform State Group...", string.Format("duel with the {0} state...", j), j / (float)animCtrlStates.Length);
             }
 
             assetStateGroup.groupName = groupName;

@@ -105,6 +105,14 @@ namespace CostumeAnimator
             m_LayerMixer.SetLayerAdditive((uint)layerIndex, isAdditive);        // todo: 观察是否可以放这里，效果不好则放在UpdateLayers里
         }
 
+        public void SetLayerIKPass(int layerIndex, bool _IKPass)
+        {
+            if (!CheckLayerIfExist(layerIndex)) return;
+
+            StateLayer layer = m_StateLayers[layerIndex];
+            layer.IKPass = _IKPass;     // 只是个标志位
+        }
+
         public void SetLayerWeight(int layerIndex, float weight)
         {
             if (!CheckLayerIfExist(layerIndex)) return;
