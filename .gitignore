@@ -40,3 +40,5 @@ Assets/AnimClip/Drib_Stand_Cautious.anim
 Assets/AnimClip/AskBallMask.mask.meta
 Assets/AnimClip/AskBallMask.mask
 Assembly-CSharp-Editor.csproj
+PlayableAnimator.csproj
+PlayableAnimator.Editor.csproj
