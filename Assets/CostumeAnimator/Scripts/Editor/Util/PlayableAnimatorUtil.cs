@@ -15,6 +15,21 @@ namespace CostumeAnimator
 {
     public class PlayableAnimatorUtil
     {
+        #region Life
+
+        private PlayableAnimatorUtil() { }
+        public static PlayableAnimatorUtil GetInstance()
+        {
+            return Nested.instance;
+        }
+
+        class Nested
+        {
+            static Nested() { }
+            internal static readonly PlayableAnimatorUtil instance = new PlayableAnimatorUtil();
+        }
+        #endregion
+
         #region Create Asset
         public AssetStateController CreateControllerAsset(string name)
         {
@@ -84,10 +99,9 @@ namespace CostumeAnimator
         /// 将AniamtorController转换为Asset
         /// </summary>
         /// <param name="path"></param>
-        public void TransAnimator2Asset(string path)
+        public void TransAnimator2Asset(AnimatorController animCtrl)
         {
             // 生成动画控制器
-            AnimatorController animCtrl = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
             AssetStateController assetCtrl = CreateControllerAsset(animCtrl.name);
 
             // 生成动画层
@@ -114,25 +128,29 @@ namespace CostumeAnimator
                 assetGroups.Add(assetDefaultGroup);
 
                 // 生成子动画组（子控制器）
-
                 ChildAnimatorStateMachine[] subMachines = animCtrlStateMachine.stateMachines;
                 for (int j = 0; j < subMachines.Length; j++)
                 {
-                    string subGroupName = string.Format("{0}_group_{1}", layerName, j);
                     AnimatorStateMachine originSubStateMachine = subMachines[j].stateMachine;
+                    string subGroupName = string.Format("{0}_group_{1}_{2}", layerName, j, originSubStateMachine.name);
                     AssetStateGroup assetSubGroup = CreateGroupAsset(subGroupName);
 
-                    TransStateGroup(originSubStateMachine, assetSubGroup, subGroupName);
+                    TransStateGroup(originSubStateMachine, assetSubGroup, originSubStateMachine.name);
                     assetGroups.Add(assetSubGroup);
 
                     if (originSubStateMachine.stateMachines != null && originSubStateMachine.stateMachines.Length > 0)
                     {
                         Debug.LogErrorFormat("not support more then 1 layer subMachines, subMachine name:{0}", originSubStateMachine.name);
                     }
+
+                    EditorUtility.DisplayProgressBar("Transform SubMachines...", string.Format("duel with the {0} Machine...", j), j / (float)subMachines.Length);
                 }
 
                 assetLayer.stateGroups = assetGroups.ToArray();
+                EditorUtility.DisplayProgressBar("Transform Layer...", string.Format("duel with the {0} Layer...", i), i / (float)animCtrlLayers.Length);
             }
+
+            EditorUtility.ClearProgressBar();
         }
 
         /// <summary>
@@ -148,14 +166,15 @@ namespace CostumeAnimator
             List<AssetBlendTree> assetBlendTrees = new List<AssetBlendTree>();
             for (int j = 0; j < animCtrlStates.Length; j++)
             {
-                Motion motion = animCtrlStates[j].state.motion;
+                AnimatorState state = animCtrlStates[j].state;
+                Motion motion = state.motion;
                 bool isBlendTree = motion is BlendTree;
                 if (isBlendTree)
                 {
                     BlendTree originBlendTree = motion as BlendTree;
-                    string blendTreeName = string.Format("{0}_blendTree_{1}", assetStateGroup.name, originBlendTree.name);
+                    string blendTreeName = string.Format("{0}_blendTree_{1}", assetStateGroup.name, state.name);
                     AssetBlendTree assetBlendTree = CreateBlendTreeAsset(blendTreeName);
-                    TransBlendTree(originBlendTree, assetBlendTree);
+                    TransBlendTree(originBlendTree, assetBlendTree, state.name);
                     assetBlendTrees.Add(assetBlendTree);
                 }
                 else
@@ -163,15 +182,13 @@ namespace CostumeAnimator
                     AnimationClip originClip = motion as AnimationClip;
                     AssetStateController.Motion newMotion = new AssetStateController.Motion();
                     
-                    if (originClip != null)
-                    {
-                        newMotion.clip = originClip;
-                        newMotion.speed = originClip.apparentSpeed;
-                        newMotion.stateName = originClip.name;
-                    }
-
+                    newMotion.clip = originClip;
+                    newMotion.speed = state.speed;
+                    newMotion.stateName = state.name;
                     assetMotions.Add(newMotion);
                 }
+
+                EditorUtility.DisplayProgressBar("Transform State Group...", string.Format("duel with the {0} state...", j), j / (float)animCtrlStates.Length);
             }
 
             assetStateGroup.groupName = groupName;
@@ -184,9 +201,9 @@ namespace CostumeAnimator
         /// </summary>
         /// <param name="originBlendTree"></param>
         /// <param name="assetBlendTree"></param>
-        private void TransBlendTree(BlendTree originBlendTree, AssetBlendTree assetBlendTree)
+        private void TransBlendTree(BlendTree originBlendTree, AssetBlendTree assetBlendTree, string blendTreeName)
         {
-            assetBlendTree.stateName = originBlendTree.name;
+            assetBlendTree.stateName = blendTreeName;
             assetBlendTree.parameter = originBlendTree.blendParameter;
             if( originBlendTree.blendType == BlendTreeType.Simple1D)
             {
@@ -207,7 +224,7 @@ namespace CostumeAnimator
                 newMotion.blendTreeType = assetBlendTree.blendTreeType;
                 newMotion.clip = clip;
                 newMotion.threshold = originChilds[i].threshold;
-                newMotion.speed = clip.apparentSpeed;
+                newMotion.speed = originChilds[i].timeScale;
 
                 assetBlendTree.motions[i] = newMotion;
             }
