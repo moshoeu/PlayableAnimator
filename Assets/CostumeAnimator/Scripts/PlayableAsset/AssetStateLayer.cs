@@ -11,7 +11,16 @@ namespace CostumeAnimator
         public AvatarMask avatarMask;
         public bool isAdditive;
         public bool _IKPass;
+        //public bool sync;
+        public bool timing;
+        public int sourceLayerIndex = -1;   // -1代表无同步层
+        // todo: editor编辑
 
+        /// <summary>
+        /// 在控制器中添加该层的所有动画
+        /// </summary>
+        /// <param name="playableAnimator"></param>
+        /// <param name="layer"></param>
         public void AddStates(PlayableAnimator playableAnimator, int layer)
         {
             if (stateGroups != null)
@@ -23,6 +32,11 @@ namespace CostumeAnimator
             }
         }
 
+        /// <summary>
+        /// 在控制器中添加层
+        /// </summary>
+        /// <param name="playableAnimator"></param>
+        /// <param name="layer"></param>
         public void AddLayer(PlayableAnimator playableAnimator, int layer)
         {
             var ctrl = playableAnimator.StateController;

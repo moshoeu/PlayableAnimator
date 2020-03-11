@@ -119,14 +119,19 @@ namespace CostumeAnimator
                 assetLayer.avatarMask = animCtrlLayer.avatarMask;
                 assetLayer.isAdditive = animCtrlLayer.blendingMode == AnimatorLayerBlendingMode.Additive;
 
+                // 判断是否是同步层
+                int syncLayerIndex = animCtrlLayer.syncedLayerIndex;
+                bool isSync = syncLayerIndex != -1;
+                AnimatorControllerLayer targetLayer = isSync ? animCtrlLayers[syncLayerIndex] : animCtrlLayer;
+
                 // 生成动画组
-                List<AssetStateGroup> assetGroups = new List<AssetStateGroup>();
+                List <AssetStateGroup> assetGroups = new List<AssetStateGroup>();
 
                 // 生成默认动画组
+                AnimatorStateMachine animCtrlStateMachine = targetLayer.stateMachine;
                 string defaultGroupName = string.Format("{0}_group_default", layerName);
-                AnimatorStateMachine animCtrlStateMachine = animCtrlLayer.stateMachine;
                 AssetStateGroup assetDefaultGroup = CreateGroupAsset(defaultGroupName);
-                TransStateGroup(animCtrlStateMachine, assetDefaultGroup);
+                TransStateGroup(animCtrlStateMachine, assetDefaultGroup, isSync, animCtrlLayer);
                 assetGroups.Add(assetDefaultGroup);
 
                 // 生成子动画组（子控制器）
@@ -139,7 +144,7 @@ namespace CostumeAnimator
                     string subGroupName = string.Format("{0}_group_{1}_{2}", layerName, j, originSubStateMachine.name);
                     AssetStateGroup assetSubGroup = CreateGroupAsset(subGroupName);
 
-                    TransStateGroup(originSubStateMachine, assetSubGroup, originSubStateMachine.name);
+                    TransStateGroup(originSubStateMachine, assetSubGroup, isSync, animCtrlLayer, originSubStateMachine.name);
                     assetGroups.Add(assetSubGroup);
 
                     if (originSubStateMachine.stateMachines != null && originSubStateMachine.stateMachines.Length > 0)
@@ -160,8 +165,10 @@ namespace CostumeAnimator
         /// </summary>
         /// <param name="originStateMachine"></param>
         /// <param name="assetStateGroup"></param>
+        /// <param name="isSync"></param>
         /// <param name="groupName"></param>
-        private void TransStateGroup(AnimatorStateMachine originStateMachine, AssetStateGroup assetStateGroup, string groupName = null)
+        private void TransStateGroup(AnimatorStateMachine originStateMachine, AssetStateGroup assetStateGroup, 
+            bool isSync, AnimatorControllerLayer overrideLayer, string groupName = null)
         {
             ChildAnimatorState[] animCtrlStates = originStateMachine.states;
             List<AssetStateController.Motion> assetMotions = new List<AssetStateController.Motion>();
@@ -171,7 +178,7 @@ namespace CostumeAnimator
                 EditorUtility.DisplayProgressBar("Transform State Group...", string.Format("duel with the {0} state...", j), j / (float)animCtrlStates.Length);
 
                 AnimatorState state = animCtrlStates[j].state;
-                Motion motion = state.motion;
+                Motion motion = isSync ? overrideLayer.GetOverrideMotion(state) : state.motion;           // 如果是同步层，取OverrideMotion
                 bool isBlendTree = motion is BlendTree;
                 if (isBlendTree)
                 {
