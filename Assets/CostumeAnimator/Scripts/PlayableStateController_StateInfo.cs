@@ -170,7 +170,12 @@ namespace CostumeAnimator
                         float curWeight = Mathf.Clamp01((nextThreshold - param) / (nextThreshold - curThreshold));
                         m_BlendTreeConfigs[i].weight = curWeight;
                         m_BlendTreeConfigs[i + 1].weight = 1 - curWeight;
-                        i++;
+                        
+                        for (int j = i + 2; j < m_BlendTreeConfigs.Length; j++)
+                        {
+                            m_BlendTreeConfigs[j].weight = 0;   // 接下来的权重都置为0
+                        }
+                        break;
                     }
                     else
                     {

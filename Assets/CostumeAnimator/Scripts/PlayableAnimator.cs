@@ -104,8 +104,13 @@ namespace CostumeAnimator
             m_StateController.Crossfade(stateName, fixedTime, false, layer);
         }
 
-        public void AddState(AnimationClip clip, string stateName = null, string groupName = null, int layer = 0)
+        public void AddState(AnimationClip clip, string stateName, string groupName = null, int layer = 0)
         {
+            if (clip == null)
+            {
+                Debug.LogWarningFormat("clip :{0} is null!", stateName);
+                return;
+            }
             AnimationClipPlayable clipPlayable = AnimationClipPlayable.Create(m_Graph, clip);
             if (!clip.isLooping || clip.wrapMode == WrapMode.Once)
             {
@@ -123,7 +128,7 @@ namespace CostumeAnimator
                 configs[i].playable = clipPlayable;
             }
             Playable playable = Playable.Create(m_Graph, 1);
-            m_StateController.AddBlendTree(stateName, playable, configs, paramName);
+            m_StateController.AddBlendTree(stateName, playable, configs, paramName, groupName, layer);
         }
         //public AnimationClip[] clips;
         //private void testLoad()

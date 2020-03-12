@@ -26,17 +26,12 @@ namespace CostumeAnimator
             }
         }
 
-        private List<Parameter<int>> m_IntParams;
-        private List<Parameter<float>> m_FloatParams;
-        private List<Parameter<bool>> m_BoolParams;
+        private List<Parameter<int>> m_IntParams = new List<Parameter<int>>();
+        private List<Parameter<float>> m_FloatParams = new List<Parameter<float>>();
+        private List<Parameter<bool>> m_BoolParams = new List<Parameter<bool>>();
 
         public int AddBool(string name)
         {
-            if (m_BoolParams == null)
-            {
-                m_BoolParams = new List<Parameter<bool>>();
-            }
-
             var param = new Parameter<bool>(name);
 
             int emptyIndex = m_BoolParams.FindIndex(b => b.isVaild == false);
@@ -55,11 +50,6 @@ namespace CostumeAnimator
 
         public int AddFloat(string name)
         {
-            if (m_FloatParams == null)
-            {
-                m_FloatParams = new List<Parameter<float>>();
-            }
-
             var param = new Parameter<float>(name);
 
             int emptyIndex = m_FloatParams.FindIndex(b => b.isVaild == false);
@@ -78,11 +68,6 @@ namespace CostumeAnimator
 
         public int AddInt(string name)
         {
-            if (m_IntParams == null)
-            {
-                m_IntParams = new List<Parameter<int>>();
-            }
-
             var param = new Parameter<int>(name);
 
             int emptyIndex = m_IntParams.FindIndex(b => b.isVaild == false);
@@ -160,7 +145,7 @@ namespace CostumeAnimator
             float res = default(float);
             if (id >= m_BoolParams.Count)
             {
-                Debug.LogErrorFormat("cant find id: {0} bool parameter", id);
+                Debug.LogErrorFormat("cant find id: {0} float parameter", id);
             }
 
             else
@@ -168,7 +153,7 @@ namespace CostumeAnimator
                 var param = m_FloatParams[id];
                 if (param.isVaild == false)
                 {
-                    Debug.LogErrorFormat("id: {0} bool parameter is Invalid", id);
+                    Debug.LogErrorFormat("id: {0} float parameter is Invalid", id);
                 }
                 else
                 {
@@ -200,7 +185,7 @@ namespace CostumeAnimator
             int res = default(int);
             if (id >= m_BoolParams.Count)
             {
-                Debug.LogErrorFormat("cant find id: {0} bool parameter", id);
+                Debug.LogErrorFormat("cant find id: {0} int parameter", id);
             }
 
             else
@@ -208,7 +193,7 @@ namespace CostumeAnimator
                 var param = m_IntParams[id];
                 if (param.isVaild == false)
                 {
-                    Debug.LogErrorFormat("id: {0} bool parameter is Invalid", id);
+                    Debug.LogErrorFormat("id: {0} int parameter is Invalid", id);
                 }
                 else
                 {
@@ -254,7 +239,7 @@ namespace CostumeAnimator
             int find = m_FloatParams.FindIndex(b => b.isVaild && b.name == name);
             if (find == -1)
             {
-                Debug.LogErrorFormat("cant find name: {0} bool parameter!", name);
+                Debug.LogErrorFormat("cant find name: {0} float parameter!", name);
                 return;
             }
 
@@ -265,14 +250,14 @@ namespace CostumeAnimator
         {
             if (id >= m_FloatParams.Count)
             {
-                Debug.LogErrorFormat("cant find id: {0} bool parameter", id);
+                Debug.LogErrorFormat("cant find id: {0} float parameter", id);
                 return;
             }
 
             var param = m_FloatParams[id];
             if (param.isVaild == false)
             {
-                Debug.LogErrorFormat("id: {0} bool parameter is Invalid", id);
+                Debug.LogErrorFormat("id: {0} float parameter is Invalid", id);
                 return;
             }
 
@@ -284,7 +269,7 @@ namespace CostumeAnimator
             int find = m_IntParams.FindIndex(b => b.isVaild && b.name == name);
             if (find == -1)
             {
-                Debug.LogErrorFormat("cant find name: {0} bool parameter!", name);
+                Debug.LogErrorFormat("cant find name: {0} int parameter!", name);
                 return;
             }
 
@@ -295,7 +280,7 @@ namespace CostumeAnimator
         {
             if (id >= m_IntParams.Count)
             {
-                Debug.LogErrorFormat("cant find id: {0} bool parameter", id);
+                Debug.LogErrorFormat("cant find id: {0} int parameter", id);
                 return;
             }
 
@@ -311,8 +296,6 @@ namespace CostumeAnimator
 
         public bool ContainsFloat(string name)
         {
-            if (m_FloatParams == null) return false;
-
             return (m_FloatParams.FindIndex(p => p.isVaild && p.name == name) != -1);
         }
     }
