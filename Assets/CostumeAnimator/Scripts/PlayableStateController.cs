@@ -87,30 +87,10 @@ namespace CostumeAnimator
             m_StateLayers[removeIndex] = null;
         }
 
-        public void SetLayerMask(int layerIndex, AvatarMask mask)
+        public StateLayer GetLayer(int layerIndex)
         {
-            if (!CheckLayerIfExist(layerIndex)) return;
-
-            StateLayer layer = m_StateLayers[layerIndex];
-            layer.avatarMask = mask;
-            m_LayerMixer.SetLayerMaskFromAvatarMask((uint)layerIndex, mask);    // todo: 观察是否可以放这里，效果不好则放在UpdateLayers里
-        }
-
-        public void SetLayerAddtive(int layerIndex, bool isAdditive)
-        {
-            if (!CheckLayerIfExist(layerIndex)) return;
-
-            StateLayer layer = m_StateLayers[layerIndex];
-            layer.isAdditive = isAdditive;
-            m_LayerMixer.SetLayerAdditive((uint)layerIndex, isAdditive);        // todo: 观察是否可以放这里，效果不好则放在UpdateLayers里
-        }
-
-        public void SetLayerIKPass(int layerIndex, bool _IKPass)
-        {
-            if (!CheckLayerIfExist(layerIndex)) return;
-
-            StateLayer layer = m_StateLayers[layerIndex];
-            layer.IKPass = _IKPass;     // 只是个标志位
+            if (!CheckLayerIfExist(layerIndex)) return null;
+            return m_StateLayers[layerIndex];
         }
 
         public void SetLayerWeight(int layerIndex, float weight)
@@ -118,7 +98,7 @@ namespace CostumeAnimator
             if (!CheckLayerIfExist(layerIndex)) return;
             StateLayer layer = m_StateLayers[layerIndex];
             layer.weight = Mathf.Clamp01(weight);
-            layer.isLayerDirty = true;
+            layer.isLayerWeightDirty = true;
         }
 
         private bool CheckLayerIfExist(int layerIndex)
@@ -146,10 +126,32 @@ namespace CostumeAnimator
                 StateLayer layer = m_StateLayers[i];
                 if (layer == null) continue;
 
-                if (layer.isLayerDirty)
+                // 更新权重
+                if (layer.isLayerWeightDirty)
                 {
                     m_LayerMixer.SetInputWeight(layer.layerIndex, layer.weight);
-                    layer.isLayerDirty = false;
+                    layer.isLayerWeightDirty = false;
+                }
+                
+                // 更新同步层
+                if (layer.isLayerSyncDirty)
+                {
+                    int syncLayerIndex = layer.SyncLayerIndex;
+                    StateLayer syncLayer = m_StateLayers[syncLayerIndex];
+                    if (layer == null)
+                    {
+                        Debug.LogErrorFormat("SyncLayer:{0} is not exist!", syncLayerIndex);
+                    }
+                    else
+                    {
+                        if (syncLayer.needSyncLayers == null)
+                        {
+                            syncLayer.needSyncLayers = new List<StateLayer>();
+                        }
+                        syncLayer.needSyncLayers.Add(layer);
+                    }
+
+                    layer.isLayerSyncDirty = false;
                 }
             }
         }

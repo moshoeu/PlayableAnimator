@@ -45,12 +45,19 @@ namespace CostumeAnimator
                 ctrl.AddLayer(layer);
             }
 
-            if (avatarMask != null)
+            var layerInstance = ctrl.GetLayer(layer);
+            if (layerInstance != null)
             {
-                ctrl.SetLayerMask(layer, avatarMask);
+                layerInstance.IKPass = _IKPass;
+                layerInstance.SyncLayerIndex = sourceLayerIndex;
+                layerInstance.IsAdditive = isAdditive;
+                layerInstance.timing = timing;
+
+                if (avatarMask != null)
+                {
+                    layerInstance.AvatarMask = avatarMask;
+                }
             }
-            
-            ctrl.SetLayerAddtive(layer, isAdditive);
         }
     }
 }

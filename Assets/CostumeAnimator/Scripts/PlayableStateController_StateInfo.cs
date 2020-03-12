@@ -14,7 +14,7 @@ namespace CostumeAnimator
 {
     public partial class PlayableStateController
     {
-        private class StateInfo
+        public class StateInfo
         {
             #region method
             public void Initialize(string name, WrapMode wrapMode)
@@ -42,8 +42,8 @@ namespace CostumeAnimator
 
             public void Enable()
             {
-                if (m_Enabled)
-                    return;
+                if (m_Clip == null && m_BlendTreeConfigs == null) return;
+                if (m_Enabled) return;
 
                 m_EnabledDirty = true;
                 m_Enabled = true;
@@ -51,8 +51,7 @@ namespace CostumeAnimator
 
             public void Disable()
             {
-                if (m_Enabled == false)
-                    return;
+                if (m_Enabled == false)  return;
 
                 m_EnabledDirty = true;
                 m_Enabled = false;
@@ -65,6 +64,7 @@ namespace CostumeAnimator
 
             public void Play()
             {
+                if (m_Clip == null && m_BlendTreeConfigs == null) return;
                 m_Playable.Play();
             }
 
@@ -79,6 +79,7 @@ namespace CostumeAnimator
 
             public void ForceWeight(float weight)
             {
+                if (m_Clip == null && m_BlendTreeConfigs == null) return;
                 m_TargetWeight = weight;
                 m_Fading = false;
                 m_FadeSpeed = 0f;

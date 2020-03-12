@@ -4,6 +4,10 @@
  *Title: Unity AnimatorController 转换到 PlayableAnimator Asset 工具类
  */
 
+// todo: 这里有个问题，同步层的实现只是复制了状态到需要同步的层，目前全由原始动画控制器导出，
+//       所以在源层的asset中修改状态并不会自动同步到同步层，而是需要一个状态一个状态手动设置，
+//       考虑后期用其他方法实现同步层，或者用编辑器实现自动同步修改状态。
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -118,11 +122,13 @@ namespace CostumeAnimator
                 AnimatorControllerLayer animCtrlLayer = animCtrlLayers[i];
                 assetLayer.avatarMask = animCtrlLayer.avatarMask;
                 assetLayer.isAdditive = animCtrlLayer.blendingMode == AnimatorLayerBlendingMode.Additive;
+                assetLayer.timing = animCtrlLayer.syncedLayerAffectsTiming;
 
                 // 判断是否是同步层
                 int syncLayerIndex = animCtrlLayer.syncedLayerIndex;
                 bool isSync = syncLayerIndex != -1;
                 AnimatorControllerLayer targetLayer = isSync ? animCtrlLayers[syncLayerIndex] : animCtrlLayer;
+                assetLayer.sourceLayerIndex = syncLayerIndex;
 
                 // 生成动画组
                 List <AssetStateGroup> assetGroups = new List<AssetStateGroup>();

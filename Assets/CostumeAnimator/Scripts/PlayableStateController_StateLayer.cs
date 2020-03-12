@@ -14,28 +14,62 @@ namespace CostumeAnimator
 {
     public partial class PlayableStateController
     {
-        private class StateLayer : IPlayableAnimatorNode
+        public class StateLayer : IPlayableAnimatorNode
         {
             private List<StateInfo> m_States;
             private PlayableGraph m_Graph;
 
             private AnimationMixerPlayable m_Mixer;
+            private AnimationLayerMixerPlayable m_Output_LayerMixer;
             private PlayableAnimatorParameter m_Params;
 
             private AvatarMask m_AvatarMask;
-            public AvatarMask avatarMask
+            public AvatarMask AvatarMask
             {
                 get { return m_AvatarMask; }
-                set { m_AvatarMask = value; }
+                set
+                {
+                    m_AvatarMask = value;
+                    m_Output_LayerMixer.SetLayerMaskFromAvatarMask((uint)layerIndex, m_AvatarMask);
+                }
             }
 
-            public int layerIndex;
-            public float weight;
-            public bool isAdditive;
-            public bool IKPass;
-            public bool isLayerDirty;
+            private bool m_IsAdditive;
+            public bool IsAdditive
+            {
+                get { return m_IsAdditive; }
+                set
+                {
+                    m_IsAdditive = value;
+                    m_Output_LayerMixer.SetLayerAdditive((uint)layerIndex, m_IsAdditive);
+                }
+            }
+
+            private int m_SyncLayerIndex;  // 同步层索引
+            public int SyncLayerIndex
+            {
+                get { return m_SyncLayerIndex; }
+                set
+                {
+                    m_SyncLayerIndex = value;
+
+                    if (m_SyncLayerIndex != -1)
+                    {
+                        isLayerSyncDirty = true;
+                    }
+                }
+            }
+
+            public int layerIndex;      // 层索引
+            public float weight;        // 层权重
+            public bool IKPass;         // 是否开启IK
+            public bool timing;         // 开启后不缩放速度
+            public bool isLayerWeightDirty = false; // 是否update权重
+            public bool isLayerSyncDirty = false;   //是否update同步层
 
             private Dictionary<string, float> _lastParamValue;
+
+            public List<StateLayer> needSyncLayers;    // 需要同步的层
 
             public StateInfo this[int i]
             {
@@ -45,8 +79,8 @@ namespace CostumeAnimator
                 }
             }
 
-            public int Count { get { return m_Count; } }
             private int m_Count;
+            public int Count { get { return m_Count; } }
 
             public StateLayer(int layerIndex, PlayableGraph graph, PlayableAnimatorParameter param)
             {
@@ -213,9 +247,18 @@ namespace CostumeAnimator
                         m_Count--;
                     }
                 }
+
+                if (needSyncLayers != null)
+                {
+                    for (int i = 0; i < needSyncLayers.Count; i++)
+                    {
+                        needSyncLayers[i].RemoveStateGroup(groupName);
+                    }
+                }
             }
 
-            public void AddState(string stateName, bool isBlendTree, Playable playable, AnimationClip clip = null, string groupName = null, BlendTreeConfig[] blendTreePlayables = null, string blendTreeParam = null)
+            public void AddState(string stateName, bool isBlendTree, Playable playable, AnimationClip clip = null, 
+                string groupName = null, BlendTreeConfig[] blendTreePlayables = null, string blendTreeParam = null)
             {
                 if (FindState(stateName) != null)
                 {
@@ -275,6 +318,14 @@ namespace CostumeAnimator
                 removeState.DestroyPlayable();
                 m_States[removeState.index] = null;
                 m_Count--;
+
+                if (needSyncLayers != null)
+                {
+                    for (int i = 0; i < needSyncLayers.Count; i++)
+                    {
+                        needSyncLayers[i].RemoveState(stateName);
+                    }
+                }
             }
 
             public void EnableState(string stateName)
@@ -285,6 +336,14 @@ namespace CostumeAnimator
                     StopAllState();
                     state.Enable();
                     state.ForceWeight(1.0f);
+
+                    if (needSyncLayers != null)
+                    {
+                        for (int i = 0; i < needSyncLayers.Count; i++)
+                        {
+                            needSyncLayers[i].EnableState(stateName);
+                        }
+                    }
                 }
             }
 
@@ -295,10 +354,19 @@ namespace CostumeAnimator
                 {
                     StopAllState();
                     state.Enable();
+                    state.ForceWeight(1.0f);
 
                     if (fixedTime >= 0)
                     {
                         state.SetTime(fixedTime);
+                    }
+
+                    if (needSyncLayers != null)
+                    {
+                        for (int i = 0; i < needSyncLayers.Count; i++)
+                        {
+                            needSyncLayers[i].EnableState(stateName, fixedTime);
+                        }
                     }
                 }
             }
@@ -310,6 +378,14 @@ namespace CostumeAnimator
                 {
                     state.Disable();
                 }
+
+                if (needSyncLayers != null)
+                {
+                    for (int i = 0; i < needSyncLayers.Count; i++)
+                    {
+                        needSyncLayers[i].DisableState(stateName);
+                    }
+                }
             }
 
             public void StopAllState()
@@ -318,6 +394,14 @@ namespace CostumeAnimator
                 {
                     if (m_States[i] == null) continue;
                     m_States[i].Stop();
+                }
+
+                if (needSyncLayers != null)
+                {
+                    for (int i = 0; i < needSyncLayers.Count; i++)
+                    {
+                        needSyncLayers[i].StopAllState();
+                    }
                 }
             }
 
@@ -350,6 +434,14 @@ namespace CostumeAnimator
                     time = isNormalnize ? (Mathf.Clamp01(time) * state.playableDuration) : time;
                     SetupLerp(state, targetWeight, time);
                 }
+
+                if (needSyncLayers != null)
+                {
+                    for (int i = 0; i < needSyncLayers.Count; i++)
+                    {
+                        needSyncLayers[i].Crossfade(stateName, time, isNormalnize);
+                    }
+                }
             }
 
             public void SetInputWeight(string stateName, float weight)
@@ -358,6 +450,14 @@ namespace CostumeAnimator
                 if (state != null)
                 {
                     state.SetWeight(weight);
+
+                    if (needSyncLayers != null)
+                    {
+                        for (int i = 0; i < needSyncLayers.Count; i++)
+                        {
+                            needSyncLayers[i].SetInputWeight(stateName, weight);
+                        }
+                    }
                 }
             }
 
@@ -395,6 +495,7 @@ namespace CostumeAnimator
             public void SetPlayableOutput(int outputPort, int inputPort, Playable inputNode)
             {
                 m_Graph.Connect(m_Mixer, 0, inputNode, inputPort);
+                m_Output_LayerMixer = (AnimationLayerMixerPlayable)inputNode;
             }
         }
     }
