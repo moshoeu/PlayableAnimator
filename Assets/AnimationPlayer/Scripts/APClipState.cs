@@ -19,11 +19,6 @@ namespace AnimationPlayer
     public class APClipState : IAPState
     {
         /// <summary>
-        /// 输出节点
-        /// </summary>
-        private Playable m_output;
-
-        /// <summary>
         /// 切片playable
         /// </summary>
         private AnimationClipPlayable m_clipPlayable;
@@ -33,29 +28,35 @@ namespace AnimationPlayer
         /// </summary>
         private IResourceHandle m_resourceHandle;
 
+        /// <summary>
+        /// 状态ID
+        /// </summary>
+        private EAPStateID m_stateID;
+
         #region 接口
         public Playable GetOutputPlayable()
         {
-            return m_output;
+            return m_clipPlayable;
         }
 
-        public void OnCreate(PlayableGraph gragh, IResourceHandle resourceHandle)
+        public EAPStateID GetStateID()
+        {
+            return m_stateID;
+        }
+
+        public void OnCreate(PlayableGraph gragh, IResourceHandle resourceHandle, EAPStateID stateID)
         {
             m_resourceHandle = resourceHandle;
-
-            m_output = Playable.Create(gragh, 1);
 
             AnimationClip clip = resourceHandle.GetResource<AnimationClip>();
             m_clipPlayable = AnimationClipPlayable.Create(gragh, clip);
 
-            gragh.Connect(m_clipPlayable, 0, m_output, 0);
-            m_output.SetInputWeight(0, 1);
+            m_stateID = stateID;
         }
 
         public void OnDestroy()
         {
             m_clipPlayable.Destroy();
-            m_output.Destroy();
 
             m_resourceHandle.ReleaseResource();
         }

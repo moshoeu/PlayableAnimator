@@ -41,7 +41,7 @@ namespace AnimationPlayer
         /// <summary>
         /// 创建状态
         /// </summary>
-        void OnCreate(PlayableGraph gragh, IResourceHandle resourceHandle);
+        void OnCreate(PlayableGraph gragh, IResourceHandle resourceHandle, EAPStateID stateID);
 
         /// <summary>
         /// 销毁状态
@@ -65,5 +65,11 @@ namespace AnimationPlayer
         /// </summary>
         /// <param name="enable"></param>
         void SetApplyFootIK(bool enable);
+
+        /// <summary>
+        /// 获取状态ID
+        /// </summary>
+        /// <returns></returns>
+        EAPStateID GetStateID();
     }
 }
