@@ -31,7 +31,7 @@ public class TestPlayable : MonoBehaviour
 
     public AnimationClip clip;
 
-    private IAPState clipState;
+    private APStateBase clipState;
 
     // Start is called before the first frame update
     void Start()
@@ -39,14 +39,17 @@ public class TestPlayable : MonoBehaviour
         PlayableGraph playableGraph = PlayableGraph.Create();
         playableGraph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
 
-        clipState = new APClipState();
-        clipState.OnCreate(playableGraph, new ClipHandle(clip));
-        clipState.OnEnter();
+        var playable = Playable.Create(playableGraph);
+        Debug.Log(playable.IsValid());
 
-        Playable output = clipState.GetOutputPlayable();
+        //clipState = new APClipState(EAPStateID.None);
+        //clipState.OnCreate(playableGraph, new ClipHandle(clip));
+        //clipState.OnEnter();
 
-        AnimationPlayableOutput playableOutput = AnimationPlayableOutput.Create(playableGraph, "out", GetComponent<Animator>());
-        playableOutput.SetSourcePlayable(output);
+        //Playable output = clipState.Output;
+
+        //AnimationPlayableOutput playableOutput = AnimationPlayableOutput.Create(playableGraph, "out", GetComponent<Animator>());
+        //playableOutput.SetSourcePlayable(output);
 
         playableGraph.Play();
     }
@@ -66,7 +69,12 @@ public class TestPlayable : MonoBehaviour
 
         if (GUI.Button(new Rect(100, 250, 200, 100), "节点速度降为0.5"))
         {
-            clipState.GetOutputPlayable().SetSpeed(0.5f);
+            clipState.Output.SetSpeed(0.5f);
+        }
+
+        if (GUI.Button(new Rect(100, 400, 200, 100), "节点时间设置为0"))
+        {
+            clipState.Output.SetTime(0f);
         }
 
     }

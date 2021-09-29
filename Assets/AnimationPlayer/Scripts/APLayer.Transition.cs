@@ -19,6 +19,19 @@ namespace AnimationPlayer
 {
     public partial class APLayer
     {
+        private class StateWeight
+        {
+            /// <summary>
+            /// 状态索引
+            /// </summary>
+            public EAPStateID m_StateID;
+
+            /// <summary>
+            /// 权重
+            /// </summary>
+            public float m_Weight;
+        }
+
         /// <summary>
         /// 过渡速度
         /// </summary>
@@ -27,7 +40,7 @@ namespace AnimationPlayer
         /// <summary>
         /// 过渡权重
         /// </summary>
-        private List<float> m_inputWeights = new List<float>();
+        private List<StateWeight> m_inputStates = new List<StateWeight>();
 
         /// <summary>
         /// 当前播放的状态的输入索引
@@ -42,7 +55,7 @@ namespace AnimationPlayer
         {
             float sumWeight = 0;
 
-            for (int i = 0; i < m_inputWeights.Count; i++)
+            for (int i = 0; i < m_inputStates.Count; i++)
             {
                 Playable input = StateMixer.GetInput(i);
                 if (false == input.IsValid())
@@ -50,7 +63,7 @@ namespace AnimationPlayer
                     continue;
                 }
 
-                float inputWeight = m_inputWeights[i];
+                float inputWeight = m_inputStates[i].m_Weight;
                 inputWeight += m_transitionSpeed * deltatime * (m_crtPlayingInputIdx == i ? 1 : -1);
                 inputWeight = Mathf.Clamp01(inputWeight);
 
@@ -58,7 +71,7 @@ namespace AnimationPlayer
             }
 
             // 归一化权重 
-            for (int i = 0; i < m_inputWeights.Count; i++)
+            for (int i = 0; i < m_inputStates.Count; i++)
             {
                 Playable input = StateMixer.GetInput(i);
                 if (false == input.IsValid())
@@ -66,8 +79,9 @@ namespace AnimationPlayer
                     continue;
                 }
 
-                m_inputWeights[i] /= sumWeight;
-                float weight = m_inputWeights[i];
+                StateWeight stateWeight = m_inputStates[i];
+                stateWeight.m_Weight /= sumWeight;
+                float weight = stateWeight.m_Weight;
                 StateMixer.SetInputWeight(i, weight);
 
                 // 权重为0 断开连接
@@ -75,7 +89,16 @@ namespace AnimationPlayer
                 {
                     StateMixer.DisconnectInput(i);
 
-                    // TODO: 根据策略 判断是否销毁该Playable 释放资源
+                    APStateBase inputState = GetState(stateWeight.m_StateID);
+                    if (inputState == null)
+                    {
+                        Debug.LogError($"UpdateTranstion: 断开连接时 状态[{stateWeight.m_StateID}]不存在");
+                    }
+                    else
+                    {
+                        inputState.m_IsFree = true;
+                        inputState.m_LstEnterFreeTime = StateMixer.GetTime();
+                    }
                 }
             }
         }
@@ -89,38 +112,33 @@ namespace AnimationPlayer
         /// <param name="transtionCurve">过渡曲线</param>
         public void TranstionState(EAPStateID stateID, float startTime, float transtionTime, AnimationCurve transtionCurve = null)
         {
-            IAPState state = m_states.Find(s => s.GetStateID() == stateID);
-            if (state == null)
-            {
-                // 如果找不到状态 同步加载状态
-                if (false == AddState(stateID, true, (s) => state = s))
-                {
-                    Debug.LogError($"APLayer.cs: 过渡到状态[{stateID}]失败！ID为[{LayerID}]的层里不存在该状态，也无法从资源库中加载该状态！");
-                    return;
-                }
-            }
+            APStateBase state = GetState(stateID);
 
             int freeIdx = FindFreeMixerInputIndex();
 
             // 过渡时间为0 则直接将权重设置为1 
             if (transtionTime <= Mathf.Epsilon)
             {
-                for(int i = 0; i < m_inputWeights.Count; i++)
+                for(int i = 0; i < m_inputStates.Count; i++)
                 {
-                    m_inputWeights[i] = i == freeIdx ? 1 : 0;
+                    m_inputStates[i].m_Weight = i == freeIdx ? 1 : 0;
                 }
                 m_transitionSpeed = 0;
             }
             else
             {
-                m_inputWeights[freeIdx] = 0;
+                m_inputStates[freeIdx].m_Weight = 0;
                 m_transitionSpeed = 1 / transtionTime;
             }
 
+            m_inputStates[freeIdx].m_StateID = stateID;
             m_crtPlayingInputIdx = freeIdx;
 
-            Playable statePlayable = state.GetOutputPlayable();
-            statePlayable.SetTime(startTime);
+            Playable statePlayable = state.Output;
+            state.SetTime(startTime);
+
+            // 状态已经连接上
+            state.m_IsFree = false;
 
             StateMixer.ConnectInput(freeIdx, statePlayable, 0);
             StateMixer.SetInputWeight(freeIdx, 0);
@@ -134,7 +152,7 @@ namespace AnimationPlayer
         {
             int findIdx = -1;
 
-            for (int i = 0; i < m_inputWeights.Count; i++)
+            for (int i = 0; i < m_inputStates.Count; i++)
             {
                 Playable input = StateMixer.GetInput(i);
                 if (false == input.IsValid())
@@ -146,8 +164,8 @@ namespace AnimationPlayer
 
             if (findIdx == -1)
             {
-                m_inputWeights.Add(0);
-                int inputCount = m_inputWeights.Count;
+                m_inputStates.Add(new StateWeight());
+                int inputCount = m_inputStates.Count;
 
                 StateMixer.SetInputCount(inputCount);
                 findIdx = inputCount - 1;

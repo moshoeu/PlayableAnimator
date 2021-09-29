@@ -102,7 +102,7 @@ namespace AnimationPlayer
         /// <summary>
         /// 所有状态
         /// </summary>
-        private List<IAPState> m_states = new List<IAPState>();
+        private List<APStateBase> m_states = new List<APStateBase>();
 
         /// <summary>
         /// 层混合器
@@ -126,19 +126,45 @@ namespace AnimationPlayer
         /// </summary>
         /// <param name="stateID"></param>
         /// <param name="stateResHandle"></param>
-        public bool AddState(EAPStateID stateID, IResourceHandle stateResHandle)
+        public bool AddState(APStateBase state)
         {
+            int findIdx = -1;
+            for (int i = 0; i < m_states.Count; i++)
+            {
+                APStateBase s = m_states[i];
+                if (s.m_IsDisposed)
+                {
+                    findIdx = i;
+                    continue;
+                }
+
+                // 状态重复
+                if (s.StateID == state.StateID)
+                {
+                    return false;
+                }
+            }
+
+            if (findIdx == -1)
+            {
+                m_states.Add(state);
+            }
+            else
+            {
+                m_states[findIdx] = state;
+            }
+
             return true;
         }
 
         /// <summary>
-        /// 添加一个状态 根据ID去资源库加载
+        /// 获取状态
         /// </summary>
         /// <param name="stateID"></param>
-        /// <param name="isSyncLoad"></param>
-        public bool AddState(EAPStateID stateID, bool isSyncLoad, System.Action<IAPState> onLoad = null)
+        /// <returns></returns>
+        private APStateBase GetState(EAPStateID stateID)
         {
-            return true;
+            return m_states.Find(s => !s.m_IsDisposed && s.StateID == stateID);
         }
     }
 }

@@ -16,7 +16,7 @@ using UnityEngine;
 
 namespace AnimationPlayer
 {
-    public class APClipState : IAPState
+    public class APClipState : APStateBase
     {
         /// <summary>
         /// 切片playable
@@ -28,70 +28,32 @@ namespace AnimationPlayer
         /// </summary>
         private IResourceHandle m_resourceHandle;
 
-        /// <summary>
-        /// 状态ID
-        /// </summary>
-        private EAPStateID m_stateID;
-
-        #region 接口
-        public Playable GetOutputPlayable()
+        public APClipState(EAPStateID stateID) : base(stateID)
         {
-            return m_clipPlayable;
+
         }
 
-        public EAPStateID GetStateID()
-        {
-            return m_stateID;
-        }
-
-        public void OnCreate(PlayableGraph gragh, IResourceHandle resourceHandle, EAPStateID stateID)
+        public override void OnCreate(PlayableGraph gragh, IResourceHandle resourceHandle)
         {
             m_resourceHandle = resourceHandle;
 
             AnimationClip clip = resourceHandle.GetResource<AnimationClip>();
             m_clipPlayable = AnimationClipPlayable.Create(gragh, clip);
 
-            m_stateID = stateID;
+            Output = m_clipPlayable;
         }
 
-        public void OnDestroy()
+        public override void OnDestroy()
         {
             m_clipPlayable.Destroy();
 
             m_resourceHandle.ReleaseResource();
         }
 
-        public void OnEnter()
-        {
-            m_clipPlayable.Play();
-        }
-
-        public void OnExit()
-        {
-            m_clipPlayable.Pause();
-            m_clipPlayable.SetTime(0);
-        }
-
-        public void OnUpdate(float deltaTime)
-        {
-            
-        }
-
-        public void SetApplyFootIK(bool enable)
+        public override void SetApplyFootIK(bool enable)
         {
             m_clipPlayable.SetApplyFootIK(enable);
         }
 
-        public void SetSpeed(float speed)
-        {
-            m_clipPlayable.SetSpeed(speed);
-        }
-
-        public void SetTime(float time)
-        {
-            m_clipPlayable.SetTime(time);
-        }
-
-        #endregion
     }
 }
